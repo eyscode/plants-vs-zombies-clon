@@ -1,0 +1,198 @@
+import random
+from neutrales import Sol
+import engine
+import math
+
+class Defensor:
+    def __init__(self, i, j):
+        self.i = i
+        self.j = j
+        self.intervalo_disparo = 3
+        self.intervalo_animacion = 0.15
+        self.crono_i_d = engine.pygame.time.get_ticks()
+        self.crono_i_a = engine.pygame.time.get_ticks()
+        self.salud = 100
+    def dibujar(self, superficie):
+        pass
+    def actualizar(self, tiempo):
+        pass
+
+class Girasol(Defensor):
+    url_imagen = "girasol.png"
+    rect_primero = (0, 0, 100, 101)
+    def __init__(self, i, j):
+        Defensor.__init__(self, i, j)
+        self.imagen = engine.cargar_imagen("girasol.png", True)
+        self.rect = engine.pygame.Rect(0, 0, 100, 101)
+        self.rect.centerx = 100 * (j + 1)
+        self.rect.centery = 90 + 120 * (i + 1)
+        self.cuadros = [(0, 0, 100, 101), (100, 0, 100, 101), (0, 0, 100, 101), (200, 0, 100, 101)]
+        self.actual = 0
+        del self.intervalo_disparo
+        self.intervalo_produccion = 11
+        self.crono_i_p = engine.pygame.time.get_ticks()
+        self.salud = 120
+        self.tweener = engine.pytweener.Tweener()
+        self.sol_producido = None
+    def dibujar(self, superficie):
+        superficie.blit(self.imagen, self.rect, self.cuadros[self.actual])
+        if self.sol_producido:
+            self.sol_producido.dibujar(superficie)
+    def actualizar(self, tiempo):
+        if self.salud <= 0:
+            engine.obtener_director().escena_actual.defensas.remove(self)
+            engine.obtener_director().escena_actual.tablero[self.i][self.j] = 0
+        if engine.pygame.time.get_ticks() - self.crono_i_a > self.intervalo_animacion * 1000:
+            self.crono_i_a = engine.pygame.time.get_ticks()
+            self.actual += 1
+            if self.actual > 3:
+                self.actual = 0
+        if engine.pygame.time.get_ticks() - self.crono_i_p > self.intervalo_produccion * 1000:
+            self.crono_i_p = engine.pygame.time.get_ticks()
+            self.producir_sol()
+        if self.tweener.hasTweens():
+            self.tweener.update(tiempo / 1000.0)
+    def producir_sol(self):
+        xfinal = random.randint(self.rect.left, self.rect.right)
+        yfinal = self.rect.top - (self.rect.height / 4)
+        x, y = self.rect.center
+        self.sol_producido = Sol(x, y, y)
+        self.tweener.addTween(self.sol_producido, x = xfinal, y = yfinal, tweenTime = 0.2, tweenType = engine.pytweener.Easing.Linear.easeIn, onCompleteFunction = self.caer)
+    def caer(self):
+        engine.obtener_director().escena_actual.solsitos.append(self.sol_producido)
+        self.sol_producido = None
+
+class ColaDeGato(Defensor):
+    url_imagen = "gato.png"
+    rect_primero = (40, 0, 97, 91)
+    def __init__(self, i, j):
+        Defensor.__init__(self, i, j)
+        self.rect = engine.pygame.Rect(0, 0, 136, 91)
+        self.rect.right = 100 * (j + 1) + 50
+        self.rect.bottom = 145 + 120 * (i + 1)
+        self.imagen = engine.cargar_imagen("gato.png", True)
+        self.cuadros_ataque = [(0, 0, 136, 91), (136, 0, 136, 91), (272, 0, 136, 91), (136, 0, 136, 91), (0, 0, 136, 91), (408, 0, 136, 91), (544, 0, 136, 91), (408, 0, 136, 91)]
+        self.cuadros_normal = [(0, 0, 136, 91), (136, 0, 136, 91)]
+        self.cuadros = self.cuadros_normal
+        self.actual = 0
+        self.salud = 200
+        self.intervalo_animacion = 0.4
+        self.intervalo_disparo = 3
+        self.contador = 0
+        self.disparando = False
+    def dibujar(self, superficie):
+        superficie.blit(self.imagen, self.rect, self.cuadros[self.actual])
+    def actualizar(self, tiempo):
+        if self.contador == 1: 
+            self.intervalo_disparo = 1
+        else: self.intervalo_disparo = 3
+        if len(engine.obtener_director().escena_actual.atacantes) > 0:
+            if engine.pygame.time.get_ticks() - self.crono_i_d > self.intervalo_disparo * 1000:
+                self.crono_i_d = engine.pygame.time.get_ticks()
+                self.contador += 1
+                if self.contador > 1: self.contador = 0
+                engine.obtener_director().escena_actual.balas.append(Pua(self.rect.centerx + 30, self.rect.centery - 40))
+        if self.salud <= 0:
+            engine.obtener_director().escena_actual.defensas.remove(self)
+            engine.obtener_director().escena_actual.tablero[self.i][self.j] = 0
+        if engine.pygame.time.get_ticks() - self.crono_i_a > self.intervalo_animacion * 1000:
+            self.crono_i_a = engine.pygame.time.get_ticks()
+            self.actual += 1
+            if self.actual > len(self.cuadros) - 1:
+                self.actual = 0
+
+class Pua:
+    def __init__(self, x, y):
+        self.rect = engine.pygame.Rect(x - 10, y - 10, 32, 18)
+        self.x_inicial = self.rect.centerx
+        self.y_inicial = self.rect.centery
+        self.imagen_base = engine.cargar_imagen("pua.png", True)
+        self.imagen = engine.cargar_imagen("pua.png", True)
+        self.crono_i_m = 0
+        self.intervalo_movimiento = 0.0001
+        self.danio = 1
+        self.angulo = 0
+        self.tiempo = 0
+        self.velocidad_t = 0.01
+        self.velocidad = math.pi / 540
+        #self.velocidad = self.velocidad_t / (((math.sin(self.velocidad * self.tiempo)) ** 2 + (math.cos(self.velocidad * self.tiempo)) ** 2) ** (0.5))
+    def dibujar(self, superficie):
+        superficie.blit(self.imagen, self.rect)
+    def actualizar(self, tiempo):
+        if len(engine.obtener_director().escena_actual.atacantes) > 0:
+            obj = engine.obtener_director().escena_actual.atacantes[0]
+            for o in engine.obtener_director().escena_actual.atacantes:
+                if pow((((self.rect.centerx - o.rect.centerx) ** 2) + ((self.rect.centery - o.rect.centery) ** 2)), 0.5) < pow((((self.rect.centerx - obj.rect.centerx) ** 2) + ((self.rect.y - obj.rect.centery) ** 2)), 0.5):
+                    obj = o
+        else: obj = None
+        if engine.pygame.time.get_ticks() - self.crono_i_m > self.intervalo_movimiento * 1000:
+            self.tiempo += 1
+            self.crono_i_m = engine.pygame.time.get_ticks()
+            if obj:
+                #d = pow((((self.rect.centerx - obj.rect.centerx) ** 2) + ((self.rect.centery - obj.rect.centery) ** 2)), 0.5)
+                #angle = math.floor(math.acos((self.rect.centery - obj.rect.centery) / d) * 180.0 / math.pi)
+                #if obj.rect.centerx >= self.rect.centerx:
+                #    self.rect.centerx += 3
+                #else:
+                #    self.rect.centerx -= 3
+                #if obj.rect.centery > self.rect.centery:
+                #    self.rect.centery += 1
+                #elif obj.rect.centery < self.rect.centery:
+                #    self.rect.centery -= 1
+                radio = (((obj.rect.centerx - self.x_inicial) ** 2 + obj.rect.centery ** 2 - self.y_inicial ** 2) / (2.0 * (obj.rect.centery - self.y_inicial))) - self.y_inicial
+                self.rect.center = self.x_inicial + math.floor(radio * math.sin(self.velocidad * self.tiempo)), self.y_inicial + (radio - math.floor(radio * math.cos(self.velocidad * self.tiempo)))
+                self.imagen = engine.pygame.transform.rotate(self.imagen_base, -self.velocidad * 180 / math.pi * self.tiempo)
+                self.velocidad = self.velocidad_t / (((math.sin(self.velocidad * self.tiempo)) ** 2 + (math.cos(self.velocidad * self.tiempo)) ** 2) ** (0.5))
+            #else:
+            #    self.rect.centerx += 3
+        if self.rect.left >= 1100:
+            engine.obtener_director().escena_actual.balas.remove(self)
+
+class LanzaGuisantes(Defensor):
+    url_imagen = "planta.png"
+    rect_primero = (0, 0, 100, 101)
+    def __init__(self, i, j):
+        Defensor.__init__(self, i, j)
+        self.rect = engine.pygame.Rect(0, 0, 100, 101)
+        self.rect.centerx = 100 * (j + 1)
+        self.rect.centery = 90 + 120 * (i + 1)
+        self.imagen = engine.cargar_imagen("planta.png", True)
+        self.cuadros = [(0, 0, 100, 101), (100, 0, 100, 101), (0, 0, 100, 101), (200, 0, 100, 101)]
+        self.actual = 0
+        self.salud = 200
+    def dibujar(self, superficie):
+        superficie.blit(self.imagen, self.rect, self.cuadros[self.actual])
+    def actualizar(self, tiempo):
+        if engine.pygame.time.get_ticks() - self.crono_i_d > self.intervalo_disparo * 1000:
+            self.crono_i_d = engine.pygame.time.get_ticks()
+            for a in engine.obtener_director().escena_actual.atacantes:
+                if a.i == self.i and a.j >= self.j:
+                    engine.obtener_director().escena_actual.balas.append(Bala(self.rect.centerx + 30, self.rect.centery - 40))
+                    break
+        if self.salud <= 0:
+            engine.obtener_director().escena_actual.defensas.remove(self)
+            engine.obtener_director().escena_actual.tablero[self.i][self.j] = 0
+        if engine.pygame.time.get_ticks() - self.crono_i_a > self.intervalo_animacion * 1000:
+            self.crono_i_a = engine.pygame.time.get_ticks()
+            self.actual += 1
+            if self.actual > 3:
+                self.actual = 0
+
+class Bala:
+    def __init__(self, x, y):
+        self.rect = engine.pygame.Rect(x - 10, y - 14, 28, 28)
+        self.rect_real = engine.pygame.Rect(x - 10, y - 14, 28, 100)
+        self.imagen = engine.cargar_imagen("bala.png", True)
+        self.crono_i_m = 0
+        self.intervalo_movimiento = 0.001
+        self.danio = 20
+    def dibujar(self, superficie):
+        superficie.blit(self.imagen, self.rect_real)
+    def actualizar(self, tiempo):
+        self.rect.x = self.rect_real.x
+        if engine.pygame.time.get_ticks() - self.crono_i_m > self.intervalo_movimiento * 1000:
+            self.crono_i_m = engine.pygame.time.get_ticks()
+            self.rect_real.centerx += 12
+        if self.rect.left >= 1100:
+            engine.obtener_director().escena_actual.balas.remove(self)
+        
