@@ -27,10 +27,10 @@ class Defensor(object):
     @property
     def cuadro_actual(self):
         return self.grilla.obtener_cuadro(self.cuadros[self.actual])
-    def aprender_habilidad(self, classname):
+    def aprender_habilidad(self, classname, *args):
         habilidades_actuales = [habilidad.__class__ for habilidad in self.habilidades]
         if classname not in habilidades_actuales:
-            self.habilidades.append(classname(self))
+            self.habilidades.append(classname(self, args))
     def olvidar_habilidad(self, classname):
         for h in self.habilidades:
             if h.__class__ == classname:
@@ -76,8 +76,17 @@ class LanzaGuisantes(Defensor):
     def __init__(self, i, j):
         Defensor.__init__(self, i, j)
         self.cuadros = [0, 1, 0, 2]
-        self.salud = 180
+        self.salud = 170
         self.aprender_habilidad(DispararNormal)
+
+class HielaGuisantes(Defensor):
+    url_imagen = "hielo.png"
+    cantidad = (3, 1)
+    def __init__(self, i, j):
+        Defensor.__init__(self, i, j)
+        self.cuadros = [0, 1, 0, 2]
+        self.salud = 175
+        self.aprender_habilidad(DispararNormal, True)
         
 class Nenufar(Defensor):
     url_imagen = "nenufar.png"

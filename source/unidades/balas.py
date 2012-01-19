@@ -1,5 +1,5 @@
 import engine
-from engine import redondear
+from engine import redondear, Grilla
 import math
 
 class Disparo(object):
@@ -7,26 +7,40 @@ class Disparo(object):
     sombra = None
     url_imagen = None
     url_sombra = "sombra.png"
+    cantidad = (1, 1)
     def __new__(cls, *args, **kwargs):
         if not cls.imagen: 
             cls.imagen = engine.cargar_imagen(cls.url_imagen, True)
             cls.sombra = engine.cargar_imagen(cls.url_sombra, True)
         return object.__new__(cls, *args, **kwargs)
     def __init__(self, x, y):
-        self.rect = self.imagen.get_rect()
+        self.grilla = Grilla(self.url_imagen, self.cantidad[0], self.cantidad[1])
+        self.rect = engine.pygame.Rect(0, 0, self.grilla.ancho, self.grilla.alto)
         self.rect.x = x
         self.rect.y = y
         self.velocidad = 3
         self.crono_i_m = 0
+        self.crono_i_a = 0
         self.intervalo_movimiento = 0.001
-    def dibujar_sombra(self, superficie):
-        superficie.blit(self.sombra, (self.rect.x, self.rect.y + 78))
+        self.intervalo_animacion = 0.1
+        self.actual = 0
+        self.cuadros = [0]
+    @property
+    def cuadro_actual(self):
+        return self.grilla.obtener_cuadro(self.cuadros[self.actual])
     def dibujar(self, superficie):
-        superficie.blit(self.imagen, self.rect)
+        superficie.blit(self.imagen, self.rect, self.cuadro_actual)
+    def dibujar_sombra(self, superficie):
+        superficie.blit(self.sombra, (self.rect.right - self.sombra.get_width(), self.rect.y + 78))
     def actualizar(self, tiempo):
         if engine.pygame.time.get_ticks() - self.crono_i_m > self.intervalo_movimiento * 1000:
             self.crono_i_m = engine.pygame.time.get_ticks()
             self.mover()
+        if engine.pygame.time.get_ticks() - self.crono_i_a > self.intervalo_animacion * 1000:
+            self.crono_i_a = engine.pygame.time.get_ticks()
+            self.actual += 1
+            if self.actual > len(self.cuadros) - 1:
+                self.actual = 0
         if self.rect.left >= 1200:
             engine.obtener_director().escena_actual.balas.remove(self)
         self.hacer_danio()
@@ -128,6 +142,10 @@ class Pua(Disparo):
         elif self.objetivo.salud <= 0:
             if self.modo == 1 and self.velocidad_y > 0: self.velocidad_y = -1 * self.velocidad_y
             self.rect.center = self.rect.centerx + self.velocidad_x, self.rect.centery + self.velocidad_y
+    def hacer_danio(self):
+        if self.rect.colliderect(self.objetivo.rect):
+            self.objetivo.salud -= self.danio
+            engine.obtener_director().escena_actual.balas.remove(self)
 
 class Bala(Disparo):
     url_imagen = "bala.png"
@@ -137,3 +155,29 @@ class Bala(Disparo):
         self.velocidad = 4
     def mover(self):
         self.rect.centerx += self.velocidad
+        
+class Hielo(Disparo):
+    url_imagen = "balahielo.png"
+    cantidad = (3, 1)
+    def __init__(self, x, y, padre):
+        Disparo.__init__(self, x, y)
+        self.danio = 20
+        self.velocidad = 4
+        self.padre = padre
+        self.cuadros = [2, 0, 2, 1]
+    def mover(self):
+        self.rect.centerx += self.velocidad
+    def hacer_danio(self):
+        if len(engine.obtener_director().escena_actual.atacantes) > 0:
+            obj = None
+            for a in engine.obtener_director().escena_actual.atacantes:
+                if self.padre.i == a.i:
+                    obj = a
+                    break
+            for a in engine.obtener_director().escena_actual.atacantes:
+                if self.padre.i == a.i and a.rect.centerx - self.rect.centerx < obj.rect.centerx - self.rect.centerx:
+                    obj = a
+            if obj and self.rect.colliderect(obj.rect):
+                obj.salud -= self.danio
+                obj.congelar()
+                engine.obtener_director().escena_actual.balas.remove(self)

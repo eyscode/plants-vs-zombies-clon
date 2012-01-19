@@ -1,6 +1,6 @@
 import engine
 from neutrales import Sol
-from balas import Bala, Pua, Pumba
+from balas import Bala, Pua, Pumba, Hielo
 import random
 
 class Habilidad(object):
@@ -10,21 +10,25 @@ class Habilidad(object):
         pass
 
 class DispararNormal(Habilidad):
-    def __init__(self, objetivo):
+    def __init__(self, objetivo, congelante = False):
         Habilidad.__init__(self, objetivo)
         self.intervalo_disparo = 3
         self.crono_i_d = engine.pygame.time.get_ticks()
+        self.congelante = congelante
     def actualizar(self, tiempo):
         if len(engine.obtener_director().escena_actual.atacantes) > 0:
             if engine.pygame.time.get_ticks() - self.crono_i_d > self.intervalo_disparo * 1000:
                 self.crono_i_d = engine.pygame.time.get_ticks()
                 for a in engine.obtener_director().escena_actual.atacantes:
                     if a.i == self.objetivo.i and a.j >= self.objetivo.j:
-                        engine.obtener_director().escena_actual.balas.append(Bala(self.objetivo.rect.centerx + 30, self.objetivo.rect.centery - 50))
+                        if self.congelante:
+                            engine.obtener_director().escena_actual.balas.append(Hielo(self.objetivo.rect.centerx + 30, self.objetivo.rect.centery - 50, self.objetivo))
+                        else:
+                            engine.obtener_director().escena_actual.balas.append(Bala(self.objetivo.rect.centerx + 15, self.objetivo.rect.centery - 50))
                         break
 
 class DispararTodoSentido(Habilidad):
-    def __init__(self, objetivo):
+    def __init__(self, objetivo, *args):
         Habilidad.__init__(self, objetivo)
         self.intervalo_disparo = 2
         self.crono_i_d = 0
@@ -61,7 +65,7 @@ class DispararTodoSentido(Habilidad):
             self.objetivo.cuadros = self.objetivo.cuadros_normal
 
 class ProducirSol(Habilidad):
-    def __init__(self, objetivo):
+    def __init__(self, objetivo, *args):
         Habilidad.__init__(self, objetivo)
         self.intervalo_produccion = 12
         self.crono_i_p = engine.pygame.time.get_ticks()
@@ -76,7 +80,7 @@ class ProducirSol(Habilidad):
             engine.obtener_director().escena_actual.tweener.addTween(sol_producido, x = xfinal, y = yfinal, tweenTime = 0.3, tweenType = engine.pytweener.Easing.Linear.easeIn)
 
 class Explotar(Habilidad):
-    def __init__(self, objetivo):
+    def __init__(self, objetivo, *args):
         Habilidad.__init__(self, objetivo)
         self.w = self.objetivo.imagen.get_width()
         self.h = self.objetivo.imagen.get_height()

@@ -527,7 +527,7 @@ class BarraControl(object):
     def __init__(self):
         self.imagen = engine.cargar_imagen("barra.png", True)
         self.slots = [SlotBarra(engine.pygame.Rect(107 + a, 11, 62, 88)) for a in range(0, 438, 73)]
-        self.soles = 50
+        self.soles = 5000
         self.nro_soles = engine.pygame.font.Font.render(engine.pygame.font.Font(None, 30), str(self.soles), 1, (0, 0, 0))
         self.rect_soles = self.nro_soles.get_rect()
         self.rect_soles.center = 49, 91

@@ -1,12 +1,29 @@
 import engine
 from unidades.defensores import Nenufar
+import re
+from engine import Grilla
 
-class Atacante:
+class Atacante(object):
+    url_imagen_1 = None
+    url_imagen_2 = None
+    imagen1 = None
+    imagen2 = None
+    cantidad = (1, 1)
+    def __new__(cls, *args, **kargs):
+        if not cls.imagen1:
+            cls.imagen1 = engine.cargar_imagen(cls.url_imagen_1, True)
+            cls.imagen2 = engine.cargar_imagen(cls.url_imagen_2, True)
+        return object.__new__(cls, *args, **kargs)
     def __init__(self, i, w, h):
         self.w = w
         self.h = h
         self.i = i
         self.j = 10
+        self.grilla = Grilla(self.url_imagen_1, self.cantidad[0], self.cantidad[1])
+        self.rect_real = engine.pygame.Rect(0, 0, self.grilla.ancho, self.grilla.alto)
+        self.rect_real.centerx = self.w * (self.j + 1)
+        self.rect_real.bottom = 120 + self.h * (i + 1)
+        self.rect = engine.pygame.Rect(0, 0, 15, self.grilla.alto)
         self.intervalo_movimiento = 0.8
         self.intervalo_animacion = 0.1
         self.crono_i_m = 0
@@ -14,37 +31,53 @@ class Atacante:
         self.salud = 100
         self.danio = 30
         self.detenido = False
+        self.congelado = False
+        self.duracion_congelado = 2
+        self.crono_i_c = 0
+        self.imagen = self.imagen1
+    @property
+    def cuadro_actual(self):
+        return self.grilla.obtener_cuadro(self.cuadros[self.actual])
     def dibujar(self, superficie):
-        pass
+        superficie.blit(self.imagen, self.rect_real, self.cuadro_actual)
     def actualizar(self, tiempo):
-        pass
-    
+        if self.congelado and engine.pygame.time.get_ticks() - self.crono_i_c > self.duracion_congelado * 1000:
+            self.descongelar()
+    def congelar(self):
+        self.crono_i_c = engine.pygame.time.get_ticks()
+        if not self.congelado:
+            for i in self.__dict__:
+                self.congelado = True
+                if re.match("\Aintervalo_.*", i):
+                    exec("self.{}=self.{}*4".format(i, i))
+            self.imagen = self.imagen2
+    def descongelar(self):
+        if self.congelado:
+            self.congelado = False
+            self.imagen = self.imagen1
+            for i in self.__dict__:
+                if re.match("\Aintervalo_.*", i):
+                    exec("self.{}=self.{}/4.0".format(i, i))
+                
 class Zombie(Atacante):
+    url_imagen_1 = "zombies.png"
+    url_imagen_2 = "zombiescongelados.png"
+    cantidad = (7, 2)
     def __init__(self, i, w, h):
         Atacante.__init__(self, i, w, h)
-        self.rect = engine.pygame.Rect(0, 0, 15, 167)
-        self.rect_real = engine.pygame.Rect(0, 0, 100, 167)
-        self.rect_real.centerx = self.w * (self.j + 1)
-        self.rect_real.bottom = 120 + self.h * (i + 1)
-        self.imagen = engine.cargar_imagen("zombies.png", True)
-        cuadros1 = [(a, 0, 100, 167) for a in range(0, 700, 100)]
-        cuadros2 = [(a, 0, 100, 167) for a in range(0, 700, 100)]
-        cuadros2.reverse()
-        self.cuadros_caminando = cuadros1 + cuadros2
-        self.cuadros_comiendo = [(a, 167, 100, 167) for a in range(0, 400, 100)]
+        self.cuadros_caminando = [0, 1, 2, 3, 4, 5, 6, 5, 4, 3, 2, 1, 0]
+        self.cuadros_comiendo = [7, 8, 9, 10, 8]
         self.cuadros = self.cuadros_caminando
         self.actual = 0
         self.intervalo_golpe = 2
         self.crono_i_g = 0
         self.danio = 30
-        self.salud = 130
+        self.salud = 150
         self.detenido = False
-    def dibujar(self, superficie):
-        superficie.blit(self.imagen, self.rect_real, self.cuadros[self.actual])
     def actualizar(self, tiempo):
+        Atacante.actualizar(self, tiempo)
         self.rect.center = self.rect_real.center
         if self.detenido:
-            self.intervalo_animacion = 0.5
             self.detenido = False
             for fila in engine.obtener_director().escena_actual.tablero:
                 if not self.detenido:
@@ -62,8 +95,8 @@ class Zombie(Atacante):
             if not self.detenido:
                 self.cuadros = self.cuadros_caminando
                 self.actual = 0
+                self.intervalo_animacion = self.intervalo_animacion / 5.0
         else:
-            self.intervalo_animacion = 0.1
             if engine.pygame.time.get_ticks() - self.crono_i_m > self.intervalo_movimiento * 1000:
                 self.crono_i_m = engine.pygame.time.get_ticks()
                 avance = 10 if self.actual != 0 else 20
@@ -77,6 +110,7 @@ class Zombie(Atacante):
                                 self.detenido = True
                                 self.cuadros = self.cuadros_comiendo
                                 self.actual = 0
+                                self.intervalo_animacion = self.intervalo_animacion * 5
                                 break
         if engine.pygame.time.get_ticks() - self.crono_i_a > self.intervalo_animacion * 1000:
             self.crono_i_a = engine.pygame.time.get_ticks()

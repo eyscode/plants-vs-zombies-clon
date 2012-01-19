@@ -7,7 +7,7 @@ from complementos import BarraControl, Boton, CuadroELeccion, Carta, CuadroCreac
 import engine
 import sqlite3
 from personal import Usuario
-from unidades.defensores import LanzaGuisantes, Girasol, ColaDeGato, Nenufar, Nuez, PetaCereza
+from unidades.defensores import *
 
 class Escena:
     def __init__(self):
