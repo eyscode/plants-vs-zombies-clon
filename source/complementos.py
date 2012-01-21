@@ -622,7 +622,7 @@ class PlantaSeleccionada(object):
                 self.plantable = 2
     def dibujar_posible(self, superficie):
         if self.plantable == 0 or self.plantable == 1:
-            self.dibujar_alpha(superficie, self.imagen, self.rect_fondo, 175, self.rect_origen)
+            self.dibujar_alpha(superficie, self.imagen, self.rect_fondo, 130, self.rect_origen)
     def dibujar_alpha(self, fondo, imagen, rect_fondo, opacidad, rect_origen):
         temp = engine.pygame.Surface((rect_fondo.width, rect_fondo.height)).convert()
         temp.blit(fondo, (0, 0), rect_fondo)

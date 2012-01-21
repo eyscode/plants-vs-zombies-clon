@@ -22,7 +22,7 @@ class DispararNormal(Habilidad):
                 for a in engine.obtener_director().escena_actual.atacantes:
                     if a.i == self.objetivo.i and a.j >= self.objetivo.j:
                         if self.congelante:
-                            engine.obtener_director().escena_actual.balas.append(Hielo(self.objetivo.rect.centerx + 30, self.objetivo.rect.centery - 50, self.objetivo))
+                            engine.obtener_director().escena_actual.balas.append(Hielo(self.objetivo.rect.centerx + 10, self.objetivo.rect.centery - 50, self.objetivo))
                         else:
                             engine.obtener_director().escena_actual.balas.append(Bala(self.objetivo.rect.centerx + 15, self.objetivo.rect.centery - 50))
                         break
@@ -79,7 +79,7 @@ class ProducirSol(Habilidad):
             engine.obtener_director().escena_actual.solsitos.append(sol_producido)
             engine.obtener_director().escena_actual.tweener.addTween(sol_producido, x = xfinal, y = yfinal, tweenTime = 0.3, tweenType = engine.pytweener.Easing.Linear.easeIn)
 
-class Explotar(Habilidad):
+class Agrandar(Habilidad):
     def __init__(self, objetivo, *args):
         Habilidad.__init__(self, objetivo)
         self.w = self.objetivo.imagen.get_width()
@@ -97,3 +97,31 @@ class Explotar(Habilidad):
         self.objetivo.rect.bottom = 120 + engine.obtener_director().escena_actual.alto_cuadro * (self.objetivo.i + 1)
         self.objetivo.grilla.cuadros[0].width = int(self.w)
         self.objetivo.grilla.cuadros[0].height = int(self.h)
+
+class Detectar(Habilidad):
+    def __init__(self, objetivo, *args):
+        Habilidad.__init__(self, objetivo)
+        self.intervalo_salir = 8
+        self.crono_i_s = engine.pygame.time.get_ticks()
+        self.intervalo_parpadeo = 1
+        self.crono_i_p = engine.pygame.time.get_ticks()
+        self.salio = False
+    def actualizar(self, tiempo):
+        if engine.pygame.time.get_ticks() - self.crono_i_s > self.intervalo_salir * 1000 and not self.salio:
+            self.objetivo.cuadros = self.objetivo.cuadros_saliendo
+            self.salio = True
+        if self.objetivo.cuadros == self.objetivo.cuadros_saliendo and self.objetivo.actual == 3:
+            self.objetivo.cuadros = self.objetivo.cuadros_arriba
+            self.objetivo.actual = 0
+        if self.salio:
+            for e in engine.obtener_director().escena_actual.atacantes:
+                if e.i == self.objetivo.i:
+                    if abs(e.j - self.objetivo.j) <= 6:
+                        self.intervalo_parpadeo = 0.7
+                    elif abs(e.j - self.objetivo.j) <= 4:
+                        self.intervalo_parpadeo = 0.4
+                    elif abs(e.j - self.objetivo.j) <= 2:
+                        self.intervalo_parpadeo = 0.1
+            
+                     
+        

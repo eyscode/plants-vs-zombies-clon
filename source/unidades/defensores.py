@@ -1,7 +1,7 @@
 import engine
 from habilidades import DispararNormal, DispararTodoSentido, ProducirSol
 from engine import Grilla
-from unidades.habilidades import Explotar
+from unidades.habilidades import Agrandar, Detectar
 import re
 
 class Defensor(object):
@@ -146,4 +146,18 @@ class PetaCereza(Defensor):
         Defensor.__init__(self, i, j)
         self.cuadros = [0]
         self.salud = 100
-        self.aprender_habilidad(Explotar)
+        self.aprender_habilidad(Agrandar)
+
+class Patatapum(Defensor):
+    url_imagen = "patata.png"
+    cantidad = (5, 1)
+    def __init__(self, i, j):
+        Defensor.__init__(self, i, j)
+        self.cuadros_abajo = [2]
+        self.cuadros_saliendo = [2, 3, 4, 0]
+        self.cuadros_arriba = [0]
+        self.cuadros_encendido = [1]
+        self.cuadros = self.cuadros_abajo
+        self.salud = 100
+        self.intervalo_animacion = 0.1
+        self.aprender_habilidad(Detectar)
