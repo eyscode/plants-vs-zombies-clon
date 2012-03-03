@@ -1,7 +1,7 @@
 import engine
 from habilidades import DispararNormal, DispararTodoSentido, ProducirSol
 from engine import Grilla
-from unidades.habilidades import Agrandar, Detectar
+from unidades.habilidades import Agrandar, Detectar, Aplastar
 import re
 
 class Defensor(object):
@@ -156,8 +156,40 @@ class Patatapum(Defensor):
         self.cuadros_abajo = [2]
         self.cuadros_saliendo = [2, 3, 4, 0]
         self.cuadros_arriba = [0]
-        self.cuadros_encendido = [1]
+        self.cuadros_encendido = [0, 1, 0]
         self.cuadros = self.cuadros_abajo
         self.salud = 100
         self.intervalo_animacion = 0.1
         self.aprender_habilidad(Detectar)
+
+class Apisonaflor(Defensor):
+    url_imagen = "apisonaflor.png"
+    cantidad = (2, 1)
+    def __init__(self, i, j):
+        Defensor.__init__(self, i, j)
+        self.cuadros = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1]
+        self.salud = 140
+        self.w = self.imagen.get_width()
+        self.h = self.imagen.get_height()
+        self.imagen_original = self.imagen
+        self.encontro = False
+        self.agrandar(0.8)
+        self.aprender_habilidad(Aplastar)
+    def agrandar(self, tiempo = 1.6):
+        engine.obtener_director().escena_actual.tweener.addTween(self, w = 172, h = 130, tweenTime = tiempo, tweenType = engine.pytweener.Easing.Linear.easeIn, onCompleteFunction = self.reducir)
+    def reducir(self, tiempo = 1.6):
+        engine.obtener_director().escena_actual.tweener.addTween(self, w = 196, h = 114, tweenTime = tiempo, tweenType = engine.pytweener.Easing.Linear.easeIn, onCompleteFunction = self.agrandar)
+    def actualizar(self, tiempo):
+        Defensor.actualizar(self, tiempo)
+        #if not self.encontro:
+        #    self.imagen = engine.pygame.transform.smoothscale(self.imagen_original, (int(self.w), int(self.h)))
+        #    self.rect.width = int(self.w) / 2
+        #    self.rect.height = int(self.h)
+        #    self.rect.centerx = 50 + engine.obtener_director().escena_actual.ancho_cuadro * (self.j + 1) - engine.obtener_director().escena_actual.ancho_cuadro / 2
+        #    self.rect.bottom = 120 + engine.obtener_director().escena_actual.alto_cuadro * (self.i + 1)
+        #    i = 0
+        #    for r in self.grilla.cuadros:
+        #        r.width = int(self.w) / 2
+        #        r.height = int(self.h)
+        #        r.left = i * int(self.w) / 2
+        #        i += 1

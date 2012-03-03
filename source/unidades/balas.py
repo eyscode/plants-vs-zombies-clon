@@ -91,15 +91,24 @@ class Pumba(Estallido):
                     for z in engine.obtener_director().escena_actual.atacantes:
                         if z.i == i and z.j == j:
                             #deberia ir anmacion de zombies en cenizas
-                            engine.obtener_director().escena_actual.atacantes.remove(z)
+                            #engine.obtener_director().escena_actual.atacantes.remove(z)
+                            z.salud -= self.danio
                     j -= 1
                 i -= 1
             self.termino = True
-        
+
 class Placa(Estallido):
     url_imagen = "placa.png"
-    def __init__(self, centerx, centery):
+    def __init__(self, centerx, centery, padre):
         Estallido.__init__(self, centerx, centery)
+        self.danio = 150
+        self.padre = padre
+        self.rect.bottom = self.rect.centery + 52
+    def hacer_danio(self):
+        if not self.termino:
+            for a in engine.obtener_director().escena_actual.atacantes:
+                if a.j == self.padre.j and a.i == self.padre.i:
+                    a.salud -= self.danio
 
 class Pua(Disparo):
     url_imagen = "pua.png"

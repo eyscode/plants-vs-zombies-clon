@@ -499,8 +499,11 @@ class CuadroLampa(object):
         self.usando = False
     def dibujar(self, superficie):
         superficie.blit(self.imagen, self.rect)
+        if not self.usando:
+            superficie.blit(self.imagen_lampa, self.rect_lampa)
     def dibujar_lampa(self, superficie):
-        superficie.blit(self.imagen_lampa, self.rect_lampa)
+        if self.usando:
+            superficie.blit(self.imagen_lampa, self.rect_lampa)
     def actualizar(self, tiempo):
         if self.usando:
             self.rect_lampa.bottomleft = engine.pygame.mouse.get_pos()
@@ -527,7 +530,7 @@ class BarraControl(object):
     def __init__(self):
         self.imagen = engine.cargar_imagen("barra.png", True)
         self.slots = [SlotBarra(engine.pygame.Rect(107 + a, 11, 62, 88)) for a in range(0, 438, 73)]
-        self.soles = 5000
+        self.soles = 50
         self.nro_soles = engine.pygame.font.Font.render(engine.pygame.font.Font(None, 30), str(self.soles), 1, (0, 0, 0))
         self.rect_soles = self.nro_soles.get_rect()
         self.rect_soles.center = 49, 91

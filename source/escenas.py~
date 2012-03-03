@@ -173,13 +173,13 @@ class Supervivencia(Escena):
             self.boton_menu.dibujar(superficie)
             for b in self.balas:
                 b.dibujar_sombra(superficie)
-            fil = 0
+            fila = 0
             for fila in self.tablero:
                 columna = 0
                 for defensor in fila:
                     if defensor: defensor.dibujar(superficie)
                     columna += 1
-                fil += 1
+                fila += 1
             for e in self.explosiones:
                 e.dibujar(superficie)
             if self.seleccion: self.seleccion.dibujar_posible(superficie)
